@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>QF Pilot Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --qantas-red: #E0001B;
+            --dark-bg: #0A0A0A;
+            --card-bg: #151515;
+            --text-primary: #FFFFFF;
+            --text-secondary: #999999;
+            --accent-blue: #00A8E1;
+            --warning-amber: #FFA500;
+            --success-green: #00D26A;
+            --border-subtle: rgba(255,255,255,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 100%;
+            min-height: 100vh;
+        }
+
+        /* Header / Nav */
+        .top-bar {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+        }
+
+        .top-bar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo .qf {
+            color: var(--qantas-red);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        /* Next Duty Hero Card */
+        .next-duty-hero {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--qantas-red) 0%, #C00018 100%);
+            border: none;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .next-duty-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .countdown-timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 48px;
+            font-weight: 700;
+            margin: 20px 0;
+            letter-spacing: -2px;
+        }
+
+        .duty-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .duty-detail-item {
+            background: rgba(0,0,0,0.2);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .duty-detail-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .duty-detail-value {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* Weather Widget */
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .weather-item {
+            background: rgba(255,255,255,0.03);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .weather-airport {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .weather-temp {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .weather-condition {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Week Timeline */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-day {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+
+        .timeline-day:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .timeline-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .timeline-date {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .timeline-badge {
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-badge.duty {
+            background: var(--qantas-red);
+        }
+
+        .timeline-badge.off {
+            background: var(--success-green);
+        }
+
+        .flight-in-timeline {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .flight-route {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .flight-time {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .captain-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .captain-name {
+            color: var(--qantas-red);
+            font-weight: 600;
+        }
+
+        /* Crew Notes */
+        .crew-note-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .crew-note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .crew-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .rating-stars {
+            color: var(--warning-amber);
+        }
+
+        .crew-note-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--qantas-red);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .btn:hover {
+            background: #C00018;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(224, 0, 27, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 8px 20px rgba(255,255,255,0.1);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--qantas-red);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            width: auto;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--qantas-red);
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* Alert Badges */
+        .alert-banner {
+            background: var(--warning-amber);
+            color: #000;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            font-size: 24px;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading::before {
+            content: '✈️';
+            font-size: 48px;
+            display: block;
+            margin-bottom: 20px;
+            animation: fly 2s infinite;
+        }
+
+        @keyframes fly {
+            0%, 100% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .next-duty-hero {
+                padding: 24px;
+            }
+
+            .countdown-timer {
+                font-size: 36px;
+            }
+
+            .duty-details {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Login Page */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 48px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-size: 15px;
+        }
+
+        /* Stat Display */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.03);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            sheetsApiKey: 'AIzaSyAco6PKzkIYWGdnlTF2YX1B2LQU6XOfqMY',
+            spreadsheetId: '16G2Kf9-ENeeSU_t_pJMXpSAxcprQw3t_TqgvTC4YW_U',
+            convertingSheetName: 'Converting sheet',
+            weatherApiKey: 'demo' // User will need to add their own
+        };
+
+        // App State
+        const state = {
+            user: null,
+            flights: [],
+            crewNotes: [],
+            currentView: 'dashboard',
+            homeAirport: 'BNE',
+            settings: {
+                dutyLimitWarning: 8, // hours before limit to warn
+                autoLogbook: true
+            }
+        };
+
+        // Initialize
+        function init() {
+            loadFromStorage();
+            render();
+            startCountdownTimer();
+        }
+
+        // Storage
+        function loadFromStorage() {
+            const stored = localStorage.getItem('qf_pilot_data');
+            if (stored) {
+                const data = JSON.parse(stored);
+                state.flights = data.flights || [];
+                state.crewNotes = data.crewNotes || [];
+                state.settings = data.settings || state.settings;
+                state.homeAirport = data.homeAirport || 'BNE';
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('qf_pilot_data', JSON.stringify({
+                flights: state.flights,
+                crewNotes: state.crewNotes,
+                settings: state.settings,
+                homeAirport: state.homeAirport
+            }));
+        }
+
+        // Render
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (!state.user) {
+                app.innerHTML = renderLogin();
+            } else {
+                app.innerHTML = renderApp();
+            }
+            
+            attachEventListeners();
+        }
+
+        function renderLogin() {
+            return `
+                <div class="login-container">
+                    <div class="login-card">
+                        <div class="login-logo">
+                            <span style="color: var(--qantas-red);">QF</span> PILOT
+                        </div>
+                        <div class="login-subtitle">Your intelligent flight companion</div>
+                        <button class="btn" onclick="mockLogin()">Sign in with Microsoft</button>
+                        <p style="margin-top: 24px; font-size: 13px; color: var(--text-secondary);">
+                            Demo mode • Full auth coming soon
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderApp() {
+            const nextDuty = getNextDuty();
+            const upcomingFlights = getUpcomingFlights();
+            
+            return `
+                <div class="app-container">
+                    ${renderTopBar()}
+                    <div class="main-content">
+                        ${renderTabNav()}
+                        ${state.currentView === 'dashboard' ? renderDashboard(nextDuty, upcomingFlights) : ''}
+                        ${state.currentView === 'roster' ? renderRoster() : ''}
+                        ${state.currentView === 'crew' ? renderCrewNotes() : ''}
+                        ${state.currentView === 'logbook' ? renderLogbook() : ''}
+                    </div>
+                </div>
+                ${renderModals()}
+            `;
+        }
+
+        function renderTopBar() {
+            return `
+                <div class="top-bar">
+                    <div class="top-bar-content">
+                        <div class="logo">
+                            <span class="qf">QF</span> PILOT
+                        </div>
+                        <div class="user-menu">
+                            <span>${state.user.name}</span>
+                            <button class="btn-secondary" style="padding: 8px 16px; margin: 0; width: auto;" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTabNav() {
+            return `
+                <div class="tab-nav">
+                    <button class="tab-btn ${state.currentView === 'dashboard' ? 'active' : ''}" onclick="switchView('dashboard')">Dashboard</button>
+                    <button class="tab-btn ${state.currentView === 'roster' ? 'active' : ''}" onclick="switchView('roster')">Roster</button>
+                    <button class="tab-btn ${state.currentView === 'crew' ? 'active' : ''}" onclick="switchView('crew')">Crew Notes</button>
+                    <button class="tab-btn ${state.currentView === 'logbook' ? 'active' : ''}" onclick="switchView('logbook')">Logbook</button>
+                </div>
+            `;
+        }
+
+        function renderDashboard(nextDuty, upcomingFlights) {
+            if (!nextDuty) {
+                return `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🏖️</div>
+                        <h2>No upcoming duties</h2>
+                        <p style="margin-top: 12px;">Import your roster to get started</p>
+                        <button class="btn" style="max-width: 300px; margin: 24px auto 0;" onclick="openImportRosterModal()">Import Roster</button>
+                    </div>
+                `;
+            }
+
+            const timeUntil = getTimeUntilDuty(nextDuty);
+            const next7Days = getNext7Days();
+            
+            return `
+                <div class="dashboard-grid">
+                    <!-- Next Duty Hero -->
+                    <div class="next-duty-hero card">
+                        <div style="position: relative; z-index: 1;">
+                            <div style="font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Next Duty</div>
+                            <div class="countdown-timer" id="countdown">${timeUntil.display}</div>
+                            <div class="duty-details">
+                                <div class="duty-detail-item">
+                                    <div class="duty-detail-label">Route</div>
+                                    <div class="duty-detail-value">${nextDuty.from} → ${nextDuty.to}</div>
+                                </div>
+                                <div class="duty-detail-item">
+                                    <div class="duty-detail-label">Departure</div>
+                                    <div class="duty-detail-value">${nextDuty.departureTime || 'TBD'}</div>
+                                </div>
+                                <div class="duty-detail-item">
+                                    <div class="duty-detail-label">Captain</div>
+                                    <div class="duty-detail-value">${nextDuty.crew?.captain || 'TBD'}</div>
+                                </div>
+                                <div class="duty-detail-item">
+                                    <div class="duty-detail-label">Aircraft</div>
+                                    <div class="duty-detail-value">${nextDuty.aircraft || 'TBD'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weather -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Weather Forecast</div>
+                        </div>
+                        ${renderWeather(nextDuty)}
+                    </div>
+
+                    <!-- Flight Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Flight Hours (Month)</div>
+                        </div>
+                        ${renderFlightStats()}
+                    </div>
+
+                    <!-- Next 7 Days -->
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <div class="card-header">
+                            <div class="card-title">Next 7 Days</div>
+                        </div>
+                        ${renderWeekTimeline(next7Days)}
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Quick Actions</div>
+                        </div>
+                        <button class="btn" onclick="openImportRosterModal()">📋 Import Roster</button>
+                        <button class="btn btn-secondary" onclick="openAddFlightModal()">➕ Add Flight</button>
+                        <button class="btn btn-secondary" onclick="exportToSheets()">📊 Export Logbook</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWeather(nextDuty) {
+            // Mock weather data - in production, fetch from weather API
+            const airports = [nextDuty.from, nextDuty.to];
+            const weatherData = {
+                'BNE': { temp: 28, condition: 'Partly Cloudy' },
+                'SYD': { temp: 25, condition: 'Clear' },
+                'MEL': { temp: 18, condition: 'Rain' },
+                'PER': { temp: 32, condition: 'Sunny' },
+                'ADL': { temp: 22, condition: 'Cloudy' }
+            };
+
+            return `
+                <div class="weather-grid">
+                    ${airports.map(airport => {
+                        const weather = weatherData[airport] || { temp: '--', condition: 'N/A' };
+                        return `
+                            <div class="weather-item">
+                                <div class="weather-airport">${airport}</div>
+                                <div class="weather-temp">${weather.temp}°</div>
+                                <div class="weather-condition">${weather.condition}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderFlightStats() {
+            const thisMonth = state.flights.filter(f => {
+                const flightDate = new Date(f.date);
+                const now = new Date();
+                return flightDate.getMonth() === now.getMonth() && 
+                       flightDate.getFullYear() === now.getFullYear();
+            });
+
+            const totalHours = thisMonth.reduce((sum, f) => {
+                if (f.blockTime) {
+                    const [hours, mins] = f.blockTime.split(':').map(Number);
+                    return sum + hours + (mins / 60);
+                }
+                return sum;
+            }, 0);
+
+            const totalFlights = thisMonth.length;
+
+            return `
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${totalHours.toFixed(1)}</div>
+                        <div class="stat-label">Hours</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${totalFlights}</div>
+                        <div class="stat-label">Flights</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWeekTimeline(days) {
+            return `
+                <div class="timeline">
+                    ${days.map(day => {
+                        const flights = state.flights.filter(f => f.date === day.date);
+                        return `
+                            <div class="timeline-day">
+                                <div class="timeline-day-header">
+                                    <div class="timeline-date">${formatDateFull(day.date)}</div>
+                                    <div class="timeline-badge ${flights.length > 0 ? 'duty' : 'off'}">
+                                        ${flights.length > 0 ? 'DUTY' : 'OFF'}
+                                    </div>
+                                </div>
+                                ${flights.length > 0 ? flights.map(f => `
+                                    <div class="flight-in-timeline">
+                                        <div>
+                                            <div class="flight-route">${f.from} → ${f.to}</div>
+                                            <div class="captain-tag">
+                                                👨‍✈️ <span class="captain-name">${f.crew?.captain || 'TBD'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flight-time">${f.departureTime || 'TBD'}</div>
+                                    </div>
+                                `).join('') : '<div style="color: var(--text-secondary); font-size: 14px;">Day off</div>'}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderRoster() {
+            const upcomingFlights = state.flights
+                .filter(f => new Date(f.date) >= new Date())
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            return `
+                <div class="dashboard-grid">
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <div class="card-header">
+                            <div class="card-title">All Upcoming Flights (${upcomingFlights.length})</div>
+                        </div>
+                        ${upcomingFlights.length === 0 ? `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">✈️</div>
+                                <p>No upcoming flights</p>
+                                <button class="btn" style="max-width: 300px; margin: 20px auto 0;" onclick="openImportRosterModal()">Import Roster</button>
+                            </div>
+                        ` : `
+                            <div class="timeline">
+                                ${upcomingFlights.map(f => `
+                                    <div class="timeline-day">
+                                        <div class="timeline-day-header">
+                                            <div class="timeline-date">${formatDateFull(f.date)} - ${f.flightNumber || 'Flight'}</div>
+                                        </div>
+                                        <div class="flight-in-timeline">
+                                            <div>
+                                                <div class="flight-route">${f.from} → ${f.to}</div>
+                                                <div class="captain-tag">
+                                                    👨‍✈️ <span class="captain-name">${f.crew?.captain || 'TBD'}</span>
+                                                </div>
+                                                ${f.aircraft ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Aircraft: ${f.aircraft}</div>` : ''}
+                                            </div>
+                                            <div>
+                                                <div class="flight-time">${f.departureTime || 'TBD'} - ${f.arrivalTime || 'TBD'}</div>
+                                                ${f.blockTime ? `<div style="font-size: 12px; color: var(--accent-blue); margin-top: 4px;">${f.blockTime}</div>` : ''}
+                                            </div>
+                                        </div>
+                                        <div class="btn-group" style="margin-top: 12px;">
+                                            <button class="btn btn-secondary" onclick="editFlight('${f.id}')">✏️ Edit</button>
+                                            <button class="btn btn-secondary" onclick="deleteFlight('${f.id}')">🗑️ Delete</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCrewNotes() {
+            return `
+                <div class="dashboard-grid">
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <div class="card-header">
+                            <div class="card-title">Crew Notes & Ratings</div>
+                            <button class="btn" style="width: auto; margin: 0; padding: 10px 20px;" onclick="openAddCrewNoteModal()">➕ Add Note</button>
+                        </div>
+                        ${state.crewNotes.length === 0 ? `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📝</div>
+                                <p>No crew notes yet</p>
+                                <p style="font-size: 14px; margin-top: 8px; color: var(--text-secondary);">Add notes about captains and crew you fly with</p>
+                            </div>
+                        ` : state.crewNotes.map(note => `
+                            <div class="crew-note-item">
+                                <div class="crew-note-header">
+                                    <div class="crew-name">👨‍✈️ ${note.name}</div>
+                                    <div class="rating-stars">${'⭐'.repeat(note.rating || 0)}</div>
+                                </div>
+                                <div class="crew-note-text">${note.note}</div>
+                                <button class="btn btn-secondary" style="padding: 8px; margin-top: 12px;" onclick="deleteCrewNote('${note.id}')">Delete</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLogbook() {
+            return `
+                <div class="dashboard-grid">
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <div class="card-header">
+                            <div class="card-title">Logbook Export</div>
+                        </div>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                            Export all your flights to Google Sheets Converting sheet, formatted and ready for your logbook.
+                        </p>
+                        ${renderFlightStats()}
+                        <button class="btn" style="margin-top: 20px;" onclick="exportToSheets()">📊 Export to Google Sheets</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderModals() {
+            return `
+                <div id="importRosterModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="modal-title">Import Roster</div>
+                            <button class="close-btn" onclick="closeModal('importRosterModal')">×</button>
+                        </div>
+                        <form onsubmit="importRoster(event)">
+                            <div class="form-group">
+                                <label>Paste roster from WebCIS View Roster</label>
+                                <textarea name="rosterData" rows="12" placeholder="Copy and paste your roster here..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn">Parse & Import</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="addFlightModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="modal-title">Add Flight</div>
+                            <button class="close-btn" onclick="closeModal('addFlightModal')">×</button>
+                        </div>
+                        ${renderFlightForm()}
+                    </div>
+                </div>
+
+                <div id="editFlightModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="modal-title">Edit Flight</div>
+                            <button class="close-btn" onclick="closeModal('editFlightModal')">×</button>
+                        </div>
+                        <div id="editFlightFormContainer"></div>
+                    </div>
+                </div>
+
+                <div id="addCrewNoteModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="modal-title">Add Crew Note</div>
+                            <button class="close-btn" onclick="closeModal('addCrewNoteModal')">×</button>
+                        </div>
+                        <form onsubmit="addCrewNote(event)">
+                            <div class="form-group">
+                                <label>Crew Member Name</label>
+                                <input type="text" name="name" placeholder="LASTNAME, FIRSTNAME" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Rating</label>
+                                <select name="rating" required>
+                                    <option value="">Select rating...</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                                    <option value="4">⭐⭐⭐⭐ Good</option>
+                                    <option value="3">⭐⭐⭐ Average</option>
+                                    <option value="2">⭐⭐ Below Average</option>
+                                    <option value="1">⭐ Poor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea name="note" rows="4" placeholder="Your notes about this crew member..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn">Save Note</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFlightForm(flight = {}) {
+            return `
+                <form onsubmit="${flight.id ? `updateFlight(event, '${flight.id}')` : 'addFlight(event)'}">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" name="date" value="${flight.date || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Flight Number</label>
+                        <input type="text" name="flightNumber" value="${flight.flightNumber || ''}" placeholder="QF123">
+                    </div>
+                    <div class="form-group">
+                        <label>From</label>
+                        <input type="text" name="from" value="${flight.from || ''}" placeholder="BNE" required>
+                    </div>
+                    <div class="form-group">
+                        <label>To</label>
+                        <input type="text" name="to" value="${flight.to || ''}" placeholder="SYD" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Aircraft</label>
+                        <input type="text" name="aircraft" value="${flight.aircraft || ''}" placeholder="VH-XZB">
+                    </div>
+                    <div class="form-group">
+                        <label>Departure Time</label>
+                        <input type="time" name="departureTime" value="${flight.departureTime || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Arrival Time</label>
+                        <input type="time" name="arrivalTime" value="${flight.arrivalTime || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Block Time (HH:MM)</label>
+                        <input type="text" name="blockTime" value="${flight.blockTime || ''}" placeholder="01:30">
+                    </div>
+                    <div class="form-group">
+                        <label>Captain Name</label>
+                        <input type="text" name="captain" value="${flight.crew?.captain || ''}" placeholder="LASTNAME, FIRSTNAME">
+                    </div>
+                    <div class="form-group">
+                        <label>First Officer</label>
+                        <input type="text" name="firstOfficer" value="${flight.crew?.firstOfficer || ''}" placeholder="LASTNAME, FIRSTNAME">
+                    </div>
+                    <button type="submit" class="btn">${flight.id ? 'Update' : 'Add'} Flight</button>
+                </form>
+            `;
+        }
+
+        // Event Handlers
+        function mockLogin() {
+            state.user = {
+                name: 'TOBY STUART',
+                email: 'toby.stuart@qantas.com.au',
+                base: 'BNE'
+            };
+            render();
+        }
+
+        function logout() {
+            if (confirm('Logout?')) {
+                state.user = null;
+                render();
+            }
+        }
+
+        function switchView(view) {
+            state.currentView = view;
+            render();
+        }
+
+        function openImportRosterModal() {
+            document.getElementById('importRosterModal').classList.add('active');
+        }
+
+        function openAddFlightModal() {
+            document.getElementById('addFlightModal').classList.add('active');
+        }
+
+        function openAddCrewNoteModal() {
+            document.getElementById('addCrewNoteModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function importRoster(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const rosterText = formData.get('rosterData');
+            
+            const parsedFlights = parseRosterData(rosterText);
+            
+            if (parsedFlights.length === 0) {
+                alert('No flights found. Please paste roster data from WebCIS.');
+                return;
+            }
+
+            parsedFlights.forEach(flight => {
+                state.flights.push(flight);
+            });
+
+            saveToStorage();
+            closeModal('importRosterModal');
+            render();
+            alert(`✅ Imported ${parsedFlights.length} flights!`);
+        }
+
+        function parseRosterData(text) {
+            const flights = [];
+            const lines = text.split('\n');
+            
+            let currentDate = null;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const dateMatch = line.match(/(\d{1,2})[\/\-](\d{1,2})\s+(\w{3})/i) || 
+                                 line.match(/(\d{4})-(\d{2})-(\d{2})/);
+                
+                if (dateMatch) {
+                    if (dateMatch[0].includes('-') && dateMatch[1].length === 4) {
+                        currentDate = dateMatch[0];
+                    } else {
+                        const day = dateMatch[1].padStart(2, '0');
+                        const monthMap = {
+                            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                            'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                            'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                        };
+                        const month = monthMap[dateMatch[3]];
+                        const year = new Date().getFullYear();
+                        currentDate = `${year}-${month}-${day}`;
+                    }
+                }
+                
+                const flightPattern = line.match(/(\d{3,4})\/(\d{3,4})\/(\d{3,4})/);
+                const sectorPattern = line.match(/([A-Z]{3})-([A-Z]{3})/);
+                const timePattern = line.match(/(\d{2}):?(\d{2})/g);
+                
+                if (currentDate && (flightPattern || sectorPattern)) {
+                    const flightNumbers = flightPattern ? 
+                        [flightPattern[1], flightPattern[2], flightPattern[3]] : [];
+                    
+                    const times = [];
+                    if (timePattern) {
+                        timePattern.forEach(t => {
+                            const clean = t.replace(':', '');
+                            times.push(clean.substring(0,2) + ':' + clean.substring(2,4));
+                        });
+                    }
+                    
+                    const sectors = [];
+                    const sectorMatches = line.matchAll(/([A-Z]{3})/g);
+                    for (const match of sectorMatches) {
+                        if (!['PLN', 'D/O'].includes(match[1])) {
+                            sectors.push(match[1]);
+                        }
+                    }
+                    
+                    if (flightNumbers.length > 0 && sectors.length >= 2) {
+                        const flightGroups = Math.floor(sectors.length / 2);
+                        for (let j = 0; j < flightGroups && j < flightNumbers.length; j++) {
+                            flights.push({
+                                id: Date.now().toString() + '-' + flights.length,
+                                date: currentDate,
+                                flightNumber: 'QF' + flightNumbers[j],
+                                from: sectors[j * 2],
+                                to: sectors[j * 2 + 1],
+                                departureTime: times[j * 2] || '',
+                                arrivalTime: times[j * 2 + 1] || '',
+                                blockTime: '',
+                                aircraft: '',
+                                crew: { captain: '', firstOfficer: '', other: '' }
+                            });
+                        }
+                    } else if (sectorPattern) {
+                        flights.push({
+                            id: Date.now().toString() + '-' + flights.length,
+                            date: currentDate,
+                            flightNumber: flightNumbers[0] ? 'QF' + flightNumbers[0] : '',
+                            from: sectorPattern[1],
+                            to: sectorPattern[2],
+                            departureTime: times[0] || '',
+                            arrivalTime: times[1] || '',
+                            blockTime: '',
+                            aircraft: '',
+                            crew: { captain: '', firstOfficer: '', other: '' }
+                        });
+                    }
+                }
+            }
+            
+            return flights;
+        }
+
+        function addFlight(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const flight = {
+                id: Date.now().toString(),
+                date: formData.get('date'),
+                flightNumber: formData.get('flightNumber'),
+                from: formData.get('from'),
+                to: formData.get('to'),
+                aircraft: formData.get('aircraft'),
+                departureTime: formData.get('departureTime'),
+                arrivalTime: formData.get('arrivalTime'),
+                blockTime: formData.get('blockTime'),
+                crew: {
+                    captain: formData.get('captain'),
+                    firstOfficer: formData.get('firstOfficer'),
+                    other: ''
+                }
+            };
+            
+            state.flights.push(flight);
+            saveToStorage();
+            closeModal('addFlightModal');
+            render();
+        }
+
+        function editFlight(id) {
+            const flight = state.flights.find(f => f.id === id);
+            if (!flight) return;
+            
+            document.getElementById('editFlightFormContainer').innerHTML = renderFlightForm(flight);
+            document.getElementById('editFlightModal').classList.add('active');
+        }
+
+        function updateFlight(event, id) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const flightIndex = state.flights.findIndex(f => f.id === id);
+            if (flightIndex === -1) return;
+            
+            state.flights[flightIndex] = {
+                ...state.flights[flightIndex],
+                date: formData.get('date'),
+                flightNumber: formData.get('flightNumber'),
+                from: formData.get('from'),
+                to: formData.get('to'),
+                aircraft: formData.get('aircraft'),
+                departureTime: formData.get('departureTime'),
+                arrivalTime: formData.get('arrivalTime'),
+                blockTime: formData.get('blockTime'),
+                crew: {
+                    captain: formData.get('captain'),
+                    firstOfficer: formData.get('firstOfficer'),
+                    other: ''
+                }
+            };
+            
+            saveToStorage();
+            closeModal('editFlightModal');
+            render();
+        }
+
+        function deleteFlight(id) {
+            if (confirm('Delete this flight?')) {
+                state.flights = state.flights.filter(f => f.id !== id);
+                saveToStorage();
+                render();
+            }
+        }
+
+        function addCrewNote(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const note = {
+                id: Date.now().toString(),
+                name: formData.get('name'),
+                rating: parseInt(formData.get('rating')),
+                note: formData.get('note'),
+                dateAdded: new Date().toISOString()
+            };
+            
+            state.crewNotes.push(note);
+            saveToStorage();
+            closeModal('addCrewNoteModal');
+            render();
+        }
+
+        function deleteCrewNote(id) {
+            if (confirm('Delete this note?')) {
+                state.crewNotes = state.crewNotes.filter(n => n.id !== id);
+                saveToStorage();
+                render();
+            }
+        }
+
+        async function exportToSheets() {
+            if (state.flights.length === 0) {
+                alert('No flights to export');
+                return;
+            }
+
+            if (!confirm('Export all flights to Google Sheets Converting sheet?')) {
+                return;
+            }
+
+            try {
+                const rows = [
+                    [], [], [], [], [],
+                    ['', '', 'Date', 'A/C Reg', 'Sector from-To', 'Inst Time', 'Dual', '', 'command', '', 'ICUS', '', 'Dual', '', 'Co-Pilot', '', 'Command', '', 'Flight Engr-'],
+                    ['', '', '', '', '', '', 'Day', 'Night', 'Day', 'Night', 'Day', 'Night', 'Day', 'Night', 'Day', 'Night', 'Day', 'Night']
+                ];
+
+                const sortedFlights = [...state.flights].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                sortedFlights.forEach(flight => {
+                    const row = [
+                        '', '', 
+                        flight.date,
+                        flight.aircraft || '',
+                        `${flight.from}-${flight.to}`,
+                        '', '', '', '', '', '', '', '', '',
+                        flight.blockTime || '',
+                        '', '', ''
+                    ];
+                    rows.push(row);
+                });
+
+                const range = `'${CONFIG.convertingSheetName}'!A1:Z${rows.length}`;
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.spreadsheetId}/values/${range}?valueInputOption=RAW&key=${CONFIG.sheetsApiKey}`,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ values: rows })
+                    }
+                );
+
+                if (!response.ok) throw new Error('Failed to export');
+
+                alert(`✅ Exported ${sortedFlights.length} flights to Converting sheet!`);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('❌ Failed to export: ' + error.message);
+            }
+        }
+
+        // Utility Functions
+        function getNextDuty() {
+            const upcoming = state.flights
+                .filter(f => new Date(f.date) >= new Date())
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            return upcoming[0];
+        }
+
+        function getUpcomingFlights() {
+            return state.flights
+                .filter(f => new Date(f.date) >= new Date())
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+
+        function getTimeUntilDuty(duty) {
+            const now = new Date();
+            const dutyDate = new Date(duty.date);
+            const diff = dutyDate - now;
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            return {
+                days,
+                hours,
+                mins,
+                display: `${days}d ${hours}h ${mins}m`
+            };
+        }
+
+        function getNext7Days() {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                days.push({
+                    date: date.toISOString().split('T')[0],
+                    dayName: date.toLocaleDateString('en-AU', { weekday: 'short' })
+                });
+            }
+            return days;
+        }
+
+        function formatDateFull(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-AU', { 
+                weekday: 'short', 
+                day: 'numeric', 
+                month: 'short'
+            });
+        }
+
+        function startCountdownTimer() {
+            setInterval(() => {
+                const countdownEl = document.getElementById('countdown');
+                if (countdownEl) {
+                    const nextDuty = getNextDuty();
+                    if (nextDuty) {
+                        const timeUntil = getTimeUntilDuty(nextDuty);
+                        countdownEl.textContent = timeUntil.display;
+                    }
+                }
+            }, 30000); // Update every 30 seconds
+        }
+
+        function attachEventListeners() {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
