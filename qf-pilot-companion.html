@@ -1213,89 +1213,109 @@
             const flights = [];
             const lines = text.split('\n');
             
-            let currentDate = null;
+            // Look for pattern detail sections (more detailed flight info)
+            const patternSections = text.split(/Pattern:/);
             
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
+            for (let section of patternSections) {
+                if (!section.trim()) continue;
                 
-                const dateMatch = line.match(/(\d{1,2})[\/\-](\d{1,2})\s+(\w{3})/i) || 
-                                 line.match(/(\d{4})-(\d{2})-(\d{2})/);
+                const sectionLines = section.split('\n');
+                let currentPattern = null;
                 
-                if (dateMatch) {
-                    if (dateMatch[0].includes('-') && dateMatch[1].length === 4) {
-                        currentDate = dateMatch[0];
-                    } else {
-                        const day = dateMatch[1].padStart(2, '0');
+                for (let line of sectionLines) {
+                    line = line.trim();
+                    
+                    // Extract pattern number (e.g., "5422")
+                    const patternMatch = line.match(/^(\d{4})/);
+                    if (patternMatch) {
+                        currentPattern = patternMatch[1];
+                    }
+                    
+                    // Parse individual flight lines (format: "18 Feb 26\t\t503\tBNE05:25\tSYD08:05\t73H\t1:40...")
+                    const flightMatch = line.match(/(\d{1,2})\s+(\w{3})\s+(\d{2})\s+(\d{3,4})\s+([A-Z]{3})(\d{2}):(\d{2})\s+([A-Z]{3})(\d{2}):(\d{2})\s+(\w+)\s+(\d{1,2}):(\d{2})/);
+                    
+                    if (flightMatch) {
+                        const [_, day, month, year, flightNum, fromPort, depHr, depMin, toPort, arrHr, arrMin, aircraft, blkHr, blkMin] = flightMatch;
+                        
                         const monthMap = {
                             'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
                             'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
                             'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
                         };
-                        const month = monthMap[dateMatch[3]];
-                        const year = new Date().getFullYear();
-                        currentDate = `${year}-${month}-${day}`;
-                    }
-                }
-                
-                const flightPattern = line.match(/(\d{3,4})\/(\d{3,4})\/(\d{3,4})/);
-                const sectorPattern = line.match(/([A-Z]{3})-([A-Z]{3})/);
-                const timePattern = line.match(/(\d{2}):?(\d{2})/g);
-                
-                if (currentDate && (flightPattern || sectorPattern)) {
-                    const flightNumbers = flightPattern ? 
-                        [flightPattern[1], flightPattern[2], flightPattern[3]] : [];
-                    
-                    const times = [];
-                    if (timePattern) {
-                        timePattern.forEach(t => {
-                            const clean = t.replace(':', '');
-                            times.push(clean.substring(0,2) + ':' + clean.substring(2,4));
-                        });
-                    }
-                    
-                    const sectors = [];
-                    const sectorMatches = line.matchAll(/([A-Z]{3})/g);
-                    for (const match of sectorMatches) {
-                        if (!['PLN', 'D/O'].includes(match[1])) {
-                            sectors.push(match[1]);
-                        }
-                    }
-                    
-                    if (flightNumbers.length > 0 && sectors.length >= 2) {
-                        const flightGroups = Math.floor(sectors.length / 2);
-                        for (let j = 0; j < flightGroups && j < flightNumbers.length; j++) {
-                            flights.push({
-                                id: Date.now().toString() + '-' + flights.length,
-                                date: currentDate,
-                                flightNumber: 'QF' + flightNumbers[j],
-                                from: sectors[j * 2],
-                                to: sectors[j * 2 + 1],
-                                departureTime: times[j * 2] || '',
-                                arrivalTime: times[j * 2 + 1] || '',
-                                blockTime: '',
-                                aircraft: '',
-                                crew: { captain: '', firstOfficer: '', other: '' }
-                            });
-                        }
-                    } else if (sectorPattern) {
+                        
+                        const yearFull = `20${year}`;
+                        const monthNum = monthMap[month];
+                        const date = `${yearFull}-${monthNum}-${day.padStart(2, '0')}`;
+                        
                         flights.push({
-                            id: Date.now().toString() + '-' + flights.length,
-                            date: currentDate,
-                            flightNumber: flightNumbers[0] ? 'QF' + flightNumbers[0] : '',
-                            from: sectorPattern[1],
-                            to: sectorPattern[2],
-                            departureTime: times[0] || '',
-                            arrivalTime: times[1] || '',
-                            blockTime: '',
-                            aircraft: '',
-                            crew: { captain: '', firstOfficer: '', other: '' }
+                            id: Date.now().toString() + '-' + flights.length + '-' + Math.random(),
+                            date: date,
+                            flightNumber: 'QF' + flightNum,
+                            from: fromPort,
+                            to: toPort,
+                            aircraft: aircraft === '73H' ? 'B737-800' : aircraft,
+                            departureTime: `${depHr}:${depMin}`,
+                            arrivalTime: `${arrHr}:${arrMin}`,
+                            blockTime: `${blkHr}:${blkMin}`,
+                            crew: { captain: '', firstOfficer: '', other: '' },
+                            pattern: currentPattern
                         });
                     }
                 }
             }
             
-            return flights;
+            // Fallback: Parse the duty roster table if pattern details not found
+            if (flights.length === 0) {
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    // Match lines like: "18/02 Wed\t5422\t503/592/593\t0425\t1310\t7:45\t4:39\tSYD\tAW01"
+                    const dutyMatch = line.match(/(\d{2})\/(\d{2})\s+\w{3}\s+(\d{4})\s+([\d\/]+)\s+(\d{4})\s+(\d{4})\s+([\d:]+)\s+([\d:]+)\s+([A-Z]{3})?/);
+                    
+                    if (dutyMatch) {
+                        const [_, day, month, pattern, flightNums, sOn, sOff, duty, credit, port] = dutyMatch;
+                        
+                        const year = new Date().getFullYear();
+                        const date = `${year}-${month}-${day}`;
+                        
+                        // Parse multiple flight numbers (e.g., "503/592/593")
+                        const flightNumbers = flightNums.split('/');
+                        
+                        // For each flight number, create a flight entry
+                        // (We don't have sector details in this view, so we'll mark them as TBD)
+                        flightNumbers.forEach((fNum, idx) => {
+                            flights.push({
+                                id: Date.now().toString() + '-' + flights.length + '-' + Math.random(),
+                                date: date,
+                                flightNumber: 'QF' + fNum,
+                                from: idx === 0 ? 'BNE' : 'TBD', // Default to BNE for first flight
+                                to: port || 'TBD',
+                                aircraft: '',
+                                departureTime: idx === 0 ? `${sOn.substring(0,2)}:${sOn.substring(2)}` : '',
+                                arrivalTime: '',
+                                blockTime: '',
+                                crew: { captain: '', firstOfficer: '', other: '' },
+                                pattern: pattern
+                            });
+                        });
+                    }
+                }
+            }
+            
+            // Remove duplicates based on date + flight number
+            const uniqueFlights = [];
+            const seen = new Set();
+            
+            for (const flight of flights) {
+                const key = `${flight.date}-${flight.flightNumber}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueFlights.push(flight);
+                }
+            }
+            
+            return uniqueFlights;
         }
 
         function addFlight(event) {
