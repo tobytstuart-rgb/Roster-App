@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilot Roster Companion</title>
+    <style>
+        :root {
+            --primary: #E0001B;
+            --dark-bg: #0B0B0F;
+            --card-bg: #16161C;
+            --text-primary: #FFFFFF;
+            --text-secondary: #9B9BA8;
+            --success: #00D26A;
+            --border: rgba(255,255,255,0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .status-bar {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .status-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            font-size: 13px;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        .sync-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+        .hero-card {
+            background: linear-gradient(135deg, var(--primary) 0%, #C00018 100%);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .countdown {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .flight-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+        @media (max-width: 768px) {
+            .countdown { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <div class="status-content">
+            <div class="logo-text">✈️ Roster Companion</div>
+            <div class="sync-status">
+                <span class="sync-dot" id="syncDot"></span>
+                <span id="syncStatus">Connecting...</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="app">
+        <div class="empty-state">
+            <div class="empty-icon">⏳</div>
+            <h2>Loading...</h2>
+        </div>
+    </div>
+
+    <script>
+        // ✅ CONFIGURED FOR TOBY
+        const BACKEND_URL = 'https://pilot-roster-api.toby-t-stuart.workers.dev';
+        const STAFF_NUMBER = '671095';
+        const SYNC_INTERVAL = 15 * 60 * 1000;
+
+        let state = {
+            flights: [],
+            lastSync: null,
+            syncing: false
+        };
+
+        async function init() {
+            console.log('🚀 Pilot Roster App starting...');
+            loadFromStorage();
+            await syncFromBackend();
+            setInterval(syncFromBackend, SYNC_INTERVAL);
+            render();
+        }
+
+        async function syncFromBackend() {
+            if (state.syncing) return;
+            
+            state.syncing = true;
+            updateSyncStatus('Syncing...', true);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/roster/${STAFF_NUMBER}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.flights && data.flights.length > 0) {
+                        state.flights = data.flights;
+                        state.lastSync = data.lastUpdated || new Date().toISOString();
+                        
+                        saveToStorage();
+                        updateSyncStatus('Synced from email', false);
+                        render();
+                        
+                        console.log(`✅ Synced ${data.flights.length} flights`);
+                    } else {
+                        updateSyncStatus('No roster data yet', false);
+                    }
+                } else if (response.status === 404) {
+                    updateSyncStatus('No roster found - waiting for email', false);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Sync failed:', error);
+                updateSyncStatus('Sync failed - using cached data', false);
+            }
+            
+            state.syncing = false;
+        }
+
+        function updateSyncStatus(message, isActive) {
+            const statusEl = document.getElementById('syncStatus');
+            const dotEl = document.getElementById('syncDot');
+            
+            if (state.lastSync) {
+                const date = new Date(state.lastSync);
+                const timeStr = date.toLocaleString('en-AU', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                statusEl.textContent = `Last synced: ${timeStr}`;
+            } else {
+                statusEl.textContent = message;
+            }
+            
+            dotEl.style.animation = isActive ? 'pulse 0.5s infinite' : 'pulse 2s infinite';
+        }
+
+        function loadFromStorage() {
+            const stored = localStorage.getItem('pilot_roster_data');
+            if (stored) {
+                const data = JSON.parse(stored);
+                state.flights = data.flights || [];
+                state.lastSync = data.lastSync || null;
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('pilot_roster_data', JSON.stringify({
+                flights: state.flights,
+                lastSync: state.lastSync
+            }));
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            const nextDuty = getNextDuty();
+            
+            if (!nextDuty) {
+                app.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🏖️</div>
+                        <h2>No upcoming duties</h2>
+                        <p style="margin-top: 12px;">Waiting for roster email...</p>
+                        <p style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);">
+                            Syncs automatically every 15 minutes
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const timeUntil = getTimeUntilDuty(nextDuty);
+            const upcomingFlights = state.flights
+                .filter(f => new Date(f.date) >= new Date())
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(0, 10);
+            
+            app.innerHTML = `
+                <div class="hero-card">
+                    <div style="font-size: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+                        Next Duty
+                    </div>
+                    <div class="countdown" id="countdown">${timeUntil.display}</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">
+                        ${nextDuty.flightNumber || 'Flight'}: ${nextDuty.from} → ${nextDuty.to}
+                    </div>
+                    <div style="font-size: 14px; opacity: 0.9;">
+                        ${formatDateFull(nextDuty.date)} • ${nextDuty.departureTime || 'TBD'}
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 16px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary);">
+                        Upcoming Flights (${upcomingFlights.length})
+                    </h3>
+                    ${upcomingFlights.map(f => `
+                        <div class="flight-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 4px;">
+                                        ${formatDateShort(f.date)} • ${f.flightNumber || ''}
+                                    </div>
+                                    <div style="font-size: 14px; color: var(--text-secondary);">
+                                        ${f.from} → ${f.to} • ${f.departureTime || 'TBD'}
+                                    </div>
+                                </div>
+                                <div style="text-align: right; font-size: 13px; color: var(--text-secondary);">
+                                    ${f.aircraft || ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            startCountdownTimer();
+        }
+
+        function getNextDuty() {
+            const upcoming = state.flights
+                .filter(f => new Date(f.date) >= new Date())
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            return upcoming[0];
+        }
+
+        function getTimeUntilDuty(duty) {
+            const now = new Date();
+            const dutyDate = new Date(duty.date);
+            const diff = dutyDate - now;
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            return {
+                days, hours, mins,
+                display: `${days}d ${hours}h ${mins}m`
+            };
+        }
+
+        function formatDateShort(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+        }
+
+        function formatDateFull(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-AU', { 
+                weekday: 'short', day: 'numeric', month: 'short'
+            });
+        }
+
+        function startCountdownTimer() {
+            setInterval(() => {
+                const countdownEl = document.getElementById('countdown');
+                if (countdownEl) {
+                    const nextDuty = getNextDuty();
+                    if (nextDuty) {
+                        const timeUntil = getTimeUntilDuty(nextDuty);
+                        countdownEl.textContent = timeUntil.display;
+                    }
+                }
+            }, 30000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
